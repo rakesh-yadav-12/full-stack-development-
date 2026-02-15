@@ -1,0 +1,114 @@
+.border{
+    border: 2px solid red;
+    margin: 3px;
+}
+
+.flex{
+    display :flex;
+}
+
+.justify-center{
+    justify-content: center;
+}
+
+.items-center{
+    align-items: center;
+}
+
+.bg-black{
+    background-color: black;
+    color: white;
+}
+
+.invert{
+    filter: invert(1);
+}
+
+.bg-grey{
+background-color: #121212;
+
+}
+
+.rounded{
+    border-radius: 7px;
+}
+
+.m-1{
+    margin: 5px;
+}
+
+.p-1{
+
+    padding: 10px;
+}
+
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;  /* Width of vertical scrollbar */
+  height: 12px; /* Height of horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;  /* Dark track background */
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #444;  /* Darker thumb */
+  border-radius: 6px;
+  border: 2px solid #1a1a1a; /* Creates padding effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;  /* Lighter on hover */
+}
+
+::-webkit-scrollbar-corner {
+  background: #1a1a1a; /* Corner where horizontal and vertical scrollbars meet */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1a1a1a;  /* thumb track */
+}
+
+/* Alternative dark theme with more contrast */
+.dark-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: #2d2d2d;
+  border-radius: 4px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Subtle variant with minimal design */
+.subtle-dark-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.subtle-dark-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.subtle-dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.subtle-dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
