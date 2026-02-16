@@ -190,22 +190,20 @@ background-color: #252525;
 }
 
 
-.songList ul{
+.songsList ul{
     padding: 0 12px;
 }
 
-.songList ul li{
+.songsList ul li{
     list-style: none;
 }
 
-.spotifyplaylists{
-    position: relative;
-}
+
 
 .playbar{
     position: absolute;
     bottom:0;
-    background-color: rgb(32, 75, 43);
+    background-color: rgb(252, 255, 253);
     width: 70.3vw;
     padding: 12px;
    
@@ -215,4 +213,45 @@ background-color: #252525;
     display: flex;
     justify-content: center;
     gap: 16px;
+}
+
+
+.songslist ul{
+    padding: 0 42px;
+    display: flex;
+}
+
+.songsList ul li{
+    list-style-type: decimal;
+  display: flex;
+  gap: 10px;
+  cursor: pointer;
+  padding: 9px 0;
+  border: 1px solid white;
+  margin: 12px;
+  padding: 13px;
+  border-radius: 5px;
+}
+
+.playnow{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    width: 10px;
+    
+
+}
+
+
+.playnow span{
+    font-size: 10px;
+    width: 50px;
+  
+}
+
+.songsList li .div img {
+    width: 3px; /* Slightly increased music icon */
+    height: 28px;
+    flex-shrink: 0;
 }

@@ -1,29 +1,38 @@
-async function getSongsFromFolder(folderName) {
-    let a = await fetch(`http://127.0.0.1:154/Day-23/video-84/songs/${encodeURIComponent(folderName)}/`)
-    let response = await a.text()
 
-    let div = document.createElement("div")
-    div.innerHTML = response
+async function getSongs(){
 
-    let as = div.getElementsByTagName("a")
-    let songs = []
+    let a= await fetch("http://127.0.0.1:154/songs/")
+    let response = await a.text();
+    console.log(response)
+let div = document.createElement("div")
+div.innerHTML = response;
+let as= div.getElementsByTagName("a")
 
-    for (let index = 0; index < as.length; index++) {
-        const element = as[index]
-        if (element.href.endsWith(".mp3")) {
-            songs.push(element.href)
-        }
+let songs=[]
+
+for (let index = 0; index < as.length; index++) {
+    const element = as[index];
+    if(element.href.endsWith(".mp3")){
+
+        songs.push(element.href) 
     }
-    return songs
+}
+return songs
 }
 
-async function main() {
-    let folder1Songs = await getSongsFromFolder("Folder1")
-    let folder2Songs = await getSongsFromFolder("Folder 2")
 
-    let allSongs = [...folder1Songs, ...folder2Songs]
+async function main(){
+    
+    let songs =await getSongs()
+    console.log(songs)
+    var audio =new Audio(songs[0]);
+    audio.play();
 
-    console.log(allSongs)
-}
 
+    audio.addEventListener("loadeddatd", ()=> {
+        console.log(audio.duration, audio.currentSrc, audio.currentTime) = audio.duration;
+        console.log(duration);
+    });
+}   
+       
 main()
