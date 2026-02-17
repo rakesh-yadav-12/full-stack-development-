@@ -203,10 +203,18 @@ background-color: #252525;
 .playbar{
     position: absolute;
     bottom:0;
-    background-color: rgb(252, 255, 253);
-    width: 70.3vw;
+    background: linear-gradient(145deg, 
+        rgba(18, 227, 25, 0.9) 0%,
+        rgba(72, 255, 80, 0.95) 25%,
+        rgba(18, 227, 25, 0.9) 50%,
+        rgba(0, 200, 255, 0.8) 75%,
+        rgba(147, 51, 255, 0.9) 100%
+    );
+    width: 69.3vw;
     padding: 12px;
-   
+    border: 3px solid rgb(208, 222, 17);
+   border-radius: 25px;
+   margin-right: 10px;;
 }
 
 .songbuttons{
@@ -216,42 +224,177 @@ background-color: #252525;
 }
 
 
-.songslist ul{
-    padding: 0 42px;
+/* Song List Container */
+.songList {
+    max-height: 433px; /* Adjust this value based on your needs */
+    overflow-y: auto; /* Add vertical scrollbar when content exceeds max-height */
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+    scrollbar-width: thin; /* For Firefox - makes scrollbar thinner */
+    scrollbar-color: rgb(18, 227, 28) #333; /* For Firefox - thumb color and track color */
+    border: 1px solid rgb(8, 128, 28);
+    border-radius: 12px;
+    margin: 10px 19px;
+    
+}
+
+/* Webkit scrollbar styling (Chrome, Safari, Edge) */
+.songList::-webkit-scrollbar {
+    width: 8px;
+}
+
+.songList::-webkit-scrollbar-track {
+    background: #a708e1;
+    border-radius: 10px;
+}
+
+.songList::-webkit-scrollbar-thumb {
+    background: rgb(18, 227, 25);
+    border-radius: 10px;
+}
+
+.songList::-webkit-scrollbar-thumb:hover {
+    background: rgb(15, 200, 20);
+}
+
+.songList ul {
+    padding: 0 12px;
     display: flex;
+    flex-direction: column;
+    margin: 0;
+    
 }
 
-.songsList ul li{
+.songList ul li {
     list-style-type: decimal;
-  display: flex;
-  gap: 10px;
-  cursor: pointer;
-  padding: 9px 0;
-  border: 1px solid white;
-  margin: 12px;
-  padding: 13px;
-  border-radius: 5px;
+    display: flex;
+    gap: 10px;
+    cursor: pointer;
+    border: 1px solid rgb(18, 227, 25);
+    margin: 12px 0;
+    padding: 4px;
+    border-radius: 5px;
+    align-items: center;
+    transition: background-color 0.3s ease;
+   font-size: px;
+    min-height: 60px; /* Fixed minimum height for consistency */
 }
 
-.playnow{
+.songList ul li:hover {
+    background-color: rgba(18, 227, 25, 0.1);
+}
+
+/* Song info section with ellipsis */
+.songList ul li .info {
+    flex: 1;
+    min-width: 0; /* Important for text-overflow to work */
+    overflow: hidden;
+}
+
+.songList ul li .info div:first-child {
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px; /* Adjust based on your layout */
+}
+
+.songList ul li .info div:last-child {
+    font-size: 12px;
+    color: #b3b3b3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* Adjust based on your layout */
+}
+
+/* Image styling */
+.songList ul li img {
+    width: 27px;
+    height: 27px;
+    flex-shrink: 0;
+    /* Prevent image from shrinking */
+}
+
+/* Play now section */
+.playnow {
     display: flex;
     justify-content: center;
     align-items: center;
-    
-    width: 10px;
-    
-
+    gap: 5px;
+    min-width: 80px;
+    flex-shrink: 0; /* Prevent play button from shrinking */
 }
 
-
-.playnow span{
-    font-size: 10px;
-    width: 50px;
-  
+.playnow span {
+    font-size: 12px;
+    color: white;
+    white-space: nowrap;
 }
 
-.songsList li .div img {
-    width: 3px; /* Slightly increased music icon */
-    height: 28px;
+.playnow img {
+    width: 30px !important;
+    height: 30px !important;
+    opacity: 0.7;
+    transition: opacity 0.2s;
     flex-shrink: 0;
+    
+}
+
+.playnow img:hover {
+    opacity: 1;
+}
+
+/* Active song highlighting */
+.songList ul li.active {
+    /* background-color: rgba(230, 16, 51, 0.2);
+    border-color: rgb(18, 227, 25);
+    border-width: 2px; */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .songList ul li .info div:first-child,
+    .songList ul li .info div:last-child {
+        max-width: 150px;
+    }
+    
+    .playnow {
+        min-width: 60px;
+    }
+    
+    .playnow span {
+        display: none; /* Hide "Play Now" text on mobile */
+    }
+}
+
+.seekbar{
+    height: 3px;
+    width: 69vw;
+    border: 2px solid rgb(241, 232, 232);
+position: absolute;
+bottom: 2px;
+border-radius: 10px;
+background-color: rgb(242, 8, 8);
+border-radius: 23px;
+}
+
+
+.circle{
+    width: 16px;
+    height: 16px;
+    border: 2px solid black;
+    border-radius: 10px  ;
+    background-color: rgb(240, 232, 232);
+    position: relative;
+    bottom: 9px;
+    left: 0%;
+    transition: left 0.5s;
+
+}
+
+
+.songbuttons img{
+    cursor: pointer;
 }

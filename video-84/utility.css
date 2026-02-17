@@ -112,3 +112,313 @@ background-color: #121212;
 .subtle-dark-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
+
+
+
+/* Song buttons container */
+.songbuttons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Base button styles */
+.songbuttons img {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    filter: brightness(1);
+    width: 24px;
+    height: 24px;
+}
+
+/* Hover effect */
+.songbuttons img:hover {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+/* Active/Click effect */
+.songbuttons img:active {
+    transform: scale(0.9);
+    filter: brightness(1.5);
+    transition: all 0.1s ease-in-out;
+}
+
+/* Disabled button state (optional) */
+.songbuttons img.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Previous/Next button specific hover */
+.songbuttons img[src="previous.svg"]:hover,
+.songbuttons img[src="next.svg"]:hover {
+    filter: brightness(1.3) drop-shadow(0 0 5px rgba(255,255,255,0.3));
+}
+
+/* Play/Pause button specific hover */
+.songbuttons img[src="play.svg"]:hover,
+.songbuttons img[src="pause.svg"]:hover {
+    filter: brightness(1.3) drop-shadow(0 0 8px rgba(0,255,0,0.3));
+}
+
+/* Playlist items hover effect */
+.songList ul li {
+    transition: all 0.2s ease-in-out;
+}
+
+.songList ul li:hover {
+    background-color: rgba(255,255,255,0.1);
+    transform: translateX(5px);
+}
+
+.songList ul li:active {
+    transform: scale(0.98);
+    background-color: rgba(255,255,255,0.15);
+}
+
+/* Active song highlight */
+.songList ul li.active {
+    background-color: rgba(255,255,255,0.15);
+    border-left: 4px solid #1db954;
+}
+
+/* Play now button hover */
+.playnow {
+    transition: all 0.2s ease-in-out;
+}
+
+.playnow:hover {
+    transform: scale(1.05);
+}
+
+.playnow:active {
+    transform: scale(0.95);
+}
+
+
+
+
+
+/* Song buttons container */
+.songbuttons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Base button styles */
+.songbuttons img {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    filter: brightness(1);
+    width: 24px;
+    height: 24px;
+}
+
+/* Hover effect - More pronounced */
+.songbuttons img:hover {
+    transform: scale(1.2);
+    filter: brightness(1.3);
+}
+
+/* Active/Click effect - More dynamic */
+.songbuttons img:active {
+    transform: scale(0.85) rotate(-5deg);
+    filter: brightness(1.8) drop-shadow(0 0 8px currentColor);
+    transition: all 0.08s ease-in-out;
+}
+
+/* Previous button specific hover - Enhanced */
+.songbuttons img[src="previous.svg"]:hover {
+    transform: scale(1.2) translateX(-3px);
+    filter: brightness(1.4) drop-shadow(-2px 0 8px rgba(255,255,255,0.5));
+    animation: previousPulse 0.8s infinite alternate;
+}
+
+/* Next button specific hover - Enhanced */
+.songbuttons img[src="next.svg"]:hover {
+    transform: scale(1.2) translateX(3px);
+    filter: brightness(1.4) drop-shadow(2px 0 8px rgba(255,255,255,0.5));
+    animation: nextPulse 0.8s infinite alternate;
+}
+
+/* Play button specific hover - Enhanced */
+.songbuttons img[src="play.svg"]:hover {
+    transform: scale(1.25);
+    filter: brightness(1.5) drop-shadow(0 0 12px #1db954);
+    animation: playPulse 0.6s infinite alternate;
+}
+
+/* Pause button specific hover - Enhanced */
+.songbuttons img[src="pause.svg"]:hover {
+    transform: scale(1.2);
+    filter: brightness(1.4) drop-shadow(0 0 10px #ffaa00);
+    animation: pausePulse 0.6s infinite alternate;
+}
+
+/* Quick hover animation when mouse quickly moves over */
+.songbuttons img {
+    animation: quickHover 0.3s ease;
+}
+
+@keyframes quickHover {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.1); }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+/* Click animation - More dramatic */
+.songbuttons img:active {
+    animation: clickBurst 0.2s ease-out !important;
+}
+
+@keyframes clickBurst {
+    0% { transform: scale(0.85) rotate(-5deg); filter: brightness(1.8); }
+    50% { transform: scale(1.3) rotate(3deg); filter: brightness(2); }
+    100% { transform: scale(1) rotate(0); filter: brightness(1); }
+}
+
+/* Pulse animations for different buttons */
+@keyframes previousPulse {
+    0% { transform: scale(1.2) translateX(-3px); filter: brightness(1.4) drop-shadow(-2px 0 8px rgba(255,255,255,0.5)); }
+    100% { transform: scale(1.25) translateX(-6px); filter: brightness(1.6) drop-shadow(-4px 0 12px rgba(255,255,255,0.7)); }
+}
+
+@keyframes nextPulse {
+    0% { transform: scale(1.2) translateX(3px); filter: brightness(1.4) drop-shadow(2px 0 8px rgba(255,255,255,0.5)); }
+    100% { transform: scale(1.25) translateX(6px); filter: brightness(1.6) drop-shadow(4px 0 12px rgba(255,255,255,0.7)); }
+}
+
+@keyframes playPulse {
+    0% { transform: scale(1.25); filter: brightness(1.5) drop-shadow(0 0 12px #1db954); }
+    100% { transform: scale(1.35); filter: brightness(1.8) drop-shadow(0 0 20px #1db954); }
+}
+
+@keyframes pausePulse {
+    0% { transform: scale(1.2); filter: brightness(1.4) drop-shadow(0 0 10px #ffaa00); }
+    100% { transform: scale(1.3); filter: brightness(1.7) drop-shadow(0 0 18px #ffaa00); }
+}
+
+/* Disabled button state (optional) */
+.songbuttons img.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    animation: none !important;
+}
+
+/* Previous/Next button specific hover - Additional glow */
+.songbuttons img[src="previous.svg"]:hover,
+.songbuttons img[src="next.svg"]:hover {
+    filter: brightness(1.4) drop-shadow(0 0 10px rgba(255,255,255,0.6));
+}
+
+/* Play/Pause button specific hover - Additional effects */
+.songbuttons img[src="play.svg"]:hover {
+    filter: brightness(1.6) drop-shadow(0 0 15px #1db954);
+}
+
+.songbuttons img[src="pause.svg"]:hover {
+    filter: brightness(1.5) drop-shadow(0 0 12px #ffaa00);
+}
+
+/* Ripple effect on click */
+.songbuttons img {
+    position: relative;
+    overflow: hidden;
+}
+
+.songbuttons img::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.songbuttons img:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    20% {
+        transform: scale(25, 25);
+        opacity: 0.3;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(40, 40);
+    }
+}
+
+/* Quick hover effect for when mouse moves fast */
+.songbuttons img:not(:hover) {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Playlist items hover effect */
+.songList ul li {
+    transition: all 0.2s ease-in-out;
+}
+
+.songList ul li:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(8px);
+    box-shadow: -2px 0 10px rgba(29, 185, 84, 0.3);
+}
+
+.songList ul li:active {
+    transform: scale(0.97);
+    background-color: rgba(211, 9, 197, 0.2);
+    transition: all 0.05s ease-in-out;
+}
+
+/* Active song highlight */
+.songList ul li.active {
+    background-color: pink;
+    border-left: 4px solid #1db954;
+    animation: activePulse 2s infinite;
+}
+
+@keyframes activePulse {
+    0% { border-left-color: #1db954; }
+    50% { border-left-color: #4aff9e; box-shadow: -2px 0 15px rgba(29, 185, 84, 0.5); }
+    100% { border-left-color: #1db954; }
+}
+
+/* Play now button hover - Enhanced */
+.playnow {
+    transition: all 0.2s ease-in-out;
+}
+
+.playnow:hover {
+    transform: scale(1.08);
+    filter: brightness(1.2);
+}
+
+.playnow:active {
+    transform: scale(0.92) rotate(-1deg);
+    transition: all 0.05s ease-in-out;
+}
+
+/* Button container hover effect */
+.songbuttons:hover {
+    gap: 18px;
+    transition: gap 0.2s ease;
+}
+
