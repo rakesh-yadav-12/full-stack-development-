@@ -111,6 +111,93 @@ function updatePlayPauseButton(isPlaying) {
     }
 }
 
+// Function to update seekbar position
+function updateSeekbar() {
+    let seekbar = document.querySelector(".seekbar");
+    let circle = document.querySelector(".circle");
+    
+    if (window.currentAudio && circle && seekbar) {
+        let percentage = (window.currentAudio.currentTime / window.currentAudio.duration) * 100 || 0;
+        circle.style.left = percentage + "%";
+    }
+}
+
+// Function to update time display
+function updateTimeDisplay() {
+    let songTime = document.querySelector(".songtime");
+    if (songTime && window.currentAudio) {
+        let minutes = Math.floor(window.currentAudio.currentTime / 60);
+        let seconds = Math.floor(window.currentAudio.currentTime % 60);
+        if (seconds < 10) seconds = "0" + seconds;
+        
+        let totalMinutes = Math.floor(window.currentAudio.duration / 60) || 0;
+        let totalSeconds = Math.floor(window.currentAudio.duration % 60) || 0;
+        if (totalSeconds < 10) totalSeconds = "0" + totalSeconds;
+        
+        songTime.textContent = `${minutes}:${seconds} / ${totalMinutes}:${totalSeconds}`;
+        
+        // Update seekbar as well
+        updateSeekbar();
+    }
+}
+
+// Function to setup seekbar functionality
+function setupSeekbar() {
+    let seekbar = document.querySelector(".seekbar");
+    let circle = document.querySelector(".circle");
+    
+    if (!seekbar || !circle) return;
+    
+    // Click on seekbar to seek
+    seekbar.addEventListener("click", (e) => {
+        if (!window.currentAudio) return;
+        
+        let seekbarRect = seekbar.getBoundingClientRect();
+        let clickPosition = (e.clientX - seekbarRect.left) / seekbarRect.width;
+        let seekTime = clickPosition * window.currentAudio.duration;
+        
+        window.currentAudio.currentTime = seekTime;
+        
+        // Update circle position
+        circle.style.left = (clickPosition * 100) + "%";
+    });
+    
+    // Drag functionality for circle
+    let isDragging = false;
+    
+    circle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        isDragging = true;
+    });
+    
+    document.addEventListener("mousemove", (e) => {
+        if (!isDragging || !window.currentAudio) return;
+        
+        let seekbarRect = seekbar.getBoundingClientRect();
+        let dragPosition = (e.clientX - seekbarRect.left) / seekbarRect.width;
+        
+        // Constrain drag position within seekbar
+        dragPosition = Math.max(0, Math.min(1, dragPosition));
+        
+        // Update circle position
+        circle.style.left = (dragPosition * 100) + "%";
+    });
+    
+    document.addEventListener("mouseup", (e) => {
+        if (isDragging && window.currentAudio) {
+            let seekbarRect = seekbar.getBoundingClientRect();
+            let dropPosition = (e.clientX - seekbarRect.left) / seekbarRect.width;
+            
+            // Constrain drop position within seekbar
+            dropPosition = Math.max(0, Math.min(1, dropPosition));
+            
+            // Seek to position
+            window.currentAudio.currentTime = dropPosition * window.currentAudio.duration;
+        }
+        isDragging = false;
+    });
+}
+
 // Add CSS for hover effects
 function addHoverStyles() {
     const styleSheet = document.createElement("style");
@@ -168,6 +255,15 @@ function addHoverStyles() {
         .songinfo {
             transition: all 0.3s ease;
         }
+        
+        /* Seekbar circle cursor */
+        .circle {
+            cursor: grab;
+        }
+        
+        .circle:active {
+            cursor: grabbing;
+        }
     `;
     document.head.appendChild(styleSheet);
 }
@@ -202,15 +298,103 @@ async function main() {
             songUL.appendChild(li);
         });
 
+        // Setup seekbar functionality
+        setupSeekbar();
+
+        // Volume control functionality
+       // Volume control functionality
+let volumeSlider = document.getElementById('volumeSlider');
+let volumeBtn = document.getElementById('volumeBtn');
+let prevVolume = 70;
+
+if (volumeSlider) {
+    // Set initial volume
+    if (window.currentAudio) {
+        window.currentAudio.volume = volumeSlider.value / 100;
+    }
+
+    volumeSlider.addEventListener('input', (e) => {
+        let vol = e.target.value / 100;
+        if (window.currentAudio) {
+            window.currentAudio.volume = vol;
+        }
+        prevVolume = e.target.value;
+        
+        // Update volume icon based on level
+        if (volumeBtn) {
+            if (vol === 0) {
+                volumeBtn.src = 'volume-mute.svg';
+                volumeBtn.classList.add('muted');
+            } else if (vol < 0.5) {
+                volumeBtn.src = 'volume-low.svg';
+                volumeBtn.classList.remove('muted');
+            } else {
+                volumeBtn.src = 'volume-high.svg';
+                volumeBtn.classList.remove('muted');
+            }
+        }
+    });
+}
+
+if (volumeBtn) {
+    volumeBtn.addEventListener('click', () => {
+        if (window.currentAudio && volumeSlider) {
+            if (window.currentAudio.volume > 0) {
+                // Mute - save current volume and set to 0
+                prevVolume = volumeSlider.value;
+                window.currentAudio.volume = 0;
+                volumeSlider.value = 0;
+                volumeBtn.src = 'volume-mute.svg';
+                volumeBtn.classList.add('muted');
+            } else {
+                // Unmute - restore previous volume
+                window.currentAudio.volume = prevVolume / 100;
+                volumeSlider.value = prevVolume;
+                
+                // Update icon based on restored volume level
+                if (prevVolume / 100 < 0.5) {
+                    volumeBtn.src = 'volume-low.svg';
+                } else {
+                    volumeBtn.src = 'volume-high.svg';
+                }
+                volumeBtn.classList.remove('muted');
+            }
+        } else if (!window.currentAudio && volumeSlider) {
+            // If no audio is playing, just toggle the slider value
+            if (volumeSlider.value > 0) {
+                prevVolume = volumeSlider.value;
+                volumeSlider.value = 0;
+                volumeBtn.src = 'volume-mute.svg';
+                volumeBtn.classList.add('muted');
+            } else {
+                volumeSlider.value = prevVolume;
+                if (prevVolume / 100 < 0.5) {
+                    volumeBtn.src = 'volume-low.svg';
+                } else {
+                    volumeBtn.src = 'volume-high.svg';
+                }
+                volumeBtn.classList.remove('muted');
+            }
+        }
+    });
+}
         // Play song function
         window.playSong = function(songFile, songsList = songs) {
             let cleanSongFile = songFile.replace(/\\/g, '/').replace(/^songs\//, '');
             
             if (window.currentAudio) {
                 window.currentAudio.pause();
+                // Remove old event listeners
+                window.currentAudio.removeEventListener("timeupdate", updateTimeDisplay);
+                window.currentAudio.removeEventListener("timeupdate", updateSeekbar);
             }
             
             window.currentAudio = new Audio(`http://127.0.0.1:154/songs/${encodeURIComponent(cleanSongFile)}`);
+            
+            // Set volume from slider
+            if (volumeSlider && window.currentAudio) {
+                window.currentAudio.volume = volumeSlider.value / 100;
+            }
             
             // Update song info in playbar
             let songInfo = document.querySelector(".songinfo");
@@ -226,6 +410,10 @@ async function main() {
             // Update play/pause button
             updatePlayPauseButton(true);
             
+            // Add timeupdate event listeners
+            window.currentAudio.addEventListener("timeupdate", updateTimeDisplay);
+            window.currentAudio.addEventListener("timeupdate", updateSeekbar);
+            
             // Handle song end - play next
             window.currentAudio.addEventListener("ended", function() {
                 let currentSrc = this.src;
@@ -239,29 +427,19 @@ async function main() {
                     let nextLi = document.querySelector(`.songList ul li[data-index="${currentIndex + 1}"]`);
                     highlightActiveSong(nextLi);
                 } else {
-                    // Last song ended, update button to play
+                    // Last song ended, update button to play and reset seekbar
                     updatePlayPauseButton(false);
+                    let circle = document.querySelector(".circle");
+                    if (circle) circle.style.left = "0%";
                 }
             });
             
-            // Update time periodically
-            window.currentAudio.addEventListener("timeupdate", updateTimeDisplay);
-        }
-
-        // Function to update time display
-        function updateTimeDisplay() {
-            let songTime = document.querySelector(".songtime");
-            if (songTime && window.currentAudio) {
-                let minutes = Math.floor(window.currentAudio.currentTime / 60);
-                let seconds = Math.floor(window.currentAudio.currentTime % 60);
-                if (seconds < 10) seconds = "0" + seconds;
-                
-                let totalMinutes = Math.floor(window.currentAudio.duration / 60) || 0;
-                let totalSeconds = Math.floor(window.currentAudio.duration % 60) || 0;
-                if (totalSeconds < 10) totalSeconds = "0" + totalSeconds;
-                
-                songTime.textContent = `${minutes}:${seconds} / ${totalMinutes}:${totalSeconds}`;
-            }
+            // Initial time display
+            updateTimeDisplay();
+            
+            // Reset seekbar position
+            let circle = document.querySelector(".circle");
+            if (circle) circle.style.left = "0%";
         }
 
         // Play/Pause button functionality - FIXED with click effect
