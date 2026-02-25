@@ -1,6 +1,9 @@
-async function getSongs() {
+let currFolder = "songs/cs"; // Define globally with default
+
+async function getSongs(folder) {
     try {
-        let a = await fetch("http://127.0.0.1:154/songs/");
+        currFolder = folder; // Update the global variable
+        let a = await fetch(`http://127.0.0.1:154/${currFolder}/`);
         let response = await a.text();
 
         let div = document.createElement("div");
@@ -14,14 +17,12 @@ async function getSongs() {
             if (element.href && element.href.endsWith(".mp3")) {
                 let fullPath = decodeURIComponent(element.href);
                 
-                let songName;
-                if (fullPath.includes('\\')) {
-                    songName = fullPath.split('\\').pop();
-                } else {
-                    songName = fullPath.split('/').pop();
-                }
+                // Extract just the filename
+                let songName = fullPath.split('/').pop().split('\\').pop();
                 
-                songName = songName.replace(/^songs[\\/]/, '');
+                // Remove any folder prefix if present
+                songName = songName.replace(new RegExp(`^${currFolder.split('/').pop()}[\\\\/]?`), '');
+                
                 songs.push(songName);
             }
         }
@@ -264,22 +265,140 @@ function addHoverStyles() {
         .circle:active {
             cursor: grabbing;
         }
+
+        /* Volume control styling */
+        .volume {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .volume img {
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .volume img:hover {
+            transform: scale(1.1);
+        }
+
+        .volume img.muted {
+            opacity: 0.7;
+        }
+
+        .volume-slider {
+            width: 100px;
+            cursor: pointer;
+        }
     `;
     document.head.appendChild(styleSheet);
 }
 
-async function main() {
-    try {
-        let songs = await getSongs();
-        console.log("Songs found:", songs);
+// Hamburger menu functionality
+function setupHamburgerMenu() {
+    const hamburger = document.querySelector('.hamburger');
+    const leftPanel = document.querySelector('.left');
+    const closeBtn = document.querySelector('.close img');
+    
+    if (hamburger) {
+        hamburger.addEventListener('click', () => {
+            leftPanel.classList.add('open');
+        });
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            leftPanel.classList.remove('open');
+        });
+    }
+}
 
-        if (songs.length === 0) {
-            console.log("No songs found!");
-            return;
+// Volume control functionality
+function setupVolumeControl() {
+    let volumeSlider = document.getElementById('volumeSlider');
+    let volumeBtn = document.getElementById('volumeBtn');
+    let prevVolume = 70;
+
+    if (volumeSlider) {
+        // Set initial volume
+        if (window.currentAudio) {
+            window.currentAudio.volume = volumeSlider.value / 100;
         }
 
-        // Add hover styles
-        addHoverStyles();
+        volumeSlider.addEventListener('input', (e) => {
+            let vol = e.target.value / 100;
+            if (window.currentAudio) {
+                window.currentAudio.volume = vol;
+            }
+            prevVolume = e.target.value;
+            
+            // Update volume icon based on level
+            if (volumeBtn) {
+                if (vol === 0) {
+                    volumeBtn.src = 'volume-mute.svg';
+                    volumeBtn.classList.add('muted');
+                } else if (vol < 0.5) {
+                    volumeBtn.src = 'volume-low.svg';
+                    volumeBtn.classList.remove('muted');
+                } else {
+                    volumeBtn.src = 'volume-high.svg';
+                    volumeBtn.classList.remove('muted');
+                }
+            }
+        });
+    }
+
+    if (volumeBtn) {
+        volumeBtn.addEventListener('click', () => {
+            if (window.currentAudio && volumeSlider) {
+                if (window.currentAudio.volume > 0) {
+                    // Mute - save current volume and set to 0
+                    prevVolume = volumeSlider.value;
+                    window.currentAudio.volume = 0;
+                    volumeSlider.value = 0;
+                    volumeBtn.src = 'volume-mute.svg';
+                    volumeBtn.classList.add('muted');
+                } else {
+                    // Unmute - restore previous volume
+                    window.currentAudio.volume = prevVolume / 100;
+                    volumeSlider.value = prevVolume;
+                    
+                    // Update icon based on restored volume level
+                    if (prevVolume / 100 < 0.5) {
+                        volumeBtn.src = 'volume-low.svg';
+                    } else {
+                        volumeBtn.src = 'volume-high.svg';
+                    }
+                    volumeBtn.classList.remove('muted');
+                }
+            } else if (!window.currentAudio && volumeSlider) {
+                // If no audio is playing, just toggle the slider value
+                if (volumeSlider.value > 0) {
+                    prevVolume = volumeSlider.value;
+                    volumeSlider.value = 0;
+                    volumeBtn.src = 'volume-mute.svg';
+                    volumeBtn.classList.add('muted');
+                } else {
+                    volumeSlider.value = prevVolume;
+                    if (prevVolume / 100 < 0.5) {
+                        volumeBtn.src = 'volume-low.svg';
+                    } else {
+                        volumeBtn.src = 'volume-high.svg';
+                    }
+                    volumeBtn.classList.remove('muted');
+                }
+            }
+        });
+    }
+}
+
+// Function to display songs in the library
+async function displaySongs(folder) {
+    try {
+        let songs = await getSongs(folder);
+        console.log("Songs found in folder", folder, ":", songs);
 
         // Get the song list container
         let songUL = document.querySelector(".songList ul");
@@ -292,106 +411,149 @@ async function main() {
         // Clear existing items
         songUL.innerHTML = "";
 
+        if (songs.length === 0) {
+            // Display a message if no songs found
+            let li = document.createElement("li");
+            li.innerHTML = '<div class="info">No songs found in this folder</div>';
+            songUL.appendChild(li);
+            return;
+        }
+
         // Create and append all song items
         songs.forEach((song, index) => {
             let li = createSongItem(song, index, songs);
             songUL.appendChild(li);
         });
 
+        return songs;
+    } catch (error) {
+        console.error("Error displaying songs:", error);
+    }
+}
+
+// Setup folder click events
+function setupFolderClicks() {
+    // Get all card elements
+    Array.from(document.getElementsByClassName("card")).forEach(e => {
+        e.addEventListener("click", async item => {
+            // Get the folder from data-folder attribute
+            const folder = item.currentTarget.dataset.folder;
+            
+            if (folder) {
+                console.log("Folder clicked:", folder);
+                
+                // Display songs from the clicked folder
+                let songs = await displaySongs(`songs/${folder}`);
+                
+                // Update the playSong function's default songs list
+                if (songs && songs.length > 0) {
+                    window.currentFolderSongs = songs;
+                    
+                    // Optional: Update the folder name in UI
+                    let folderName = folder.toUpperCase();
+                    // You can add a folder title element if you want
+                }
+            }
+        });
+    });
+}
+async function displayAlbums(){
+let a = await fetch(`http://127.0.0.1:154/songs/`)
+let response = await a.text();
+let div = document.createElement("div")
+div.innerHTML = response;
+let anchors = div.getElementsByTagName("a")
+let cardContainer = document.querySelector(".container")
+let array = Array.form(anchors)
+for (let index = 0; index < array.length; index++) {
+    const e = array[index];
+    
+}
+   
+    if(a.href.includes("/songs")){
+
+     let folder = a.href.split("/").slice(-2)[0]
+     let a = await fetch(`http://127.0.0.1:154/songs/${folder}/info.json`)
+let response = await a.json();
+console.log(response)
+cardContainer.innerHTML = cardContainer.innerHTML + `<div data-folder="cs" class="card">
+    
+    <div  class="play">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+
+   <polygon points="9,7 17,12 9,17" fill="black" stroke="none" />
+
+</svg>
+    </div>
+<img src="/songs/${folder}conver.jpg" alt="">
+<h2>${response.title}</h2>
+<p>${response.description}</p>
+  </div>`
+    }
+
+}
+
+Array.from(document.getElementsByClassName("card")).forEach(e=>{
+    console.log(e)
+    e.addEventListener("click", async item =>{
+        console.log("Fetching Songs")
+        songs = await getSongs(`songs/${item}.currentTarget`)
+    } )
+})
+
+
+async function main() {
+    try {
+// Display all albums on the page
+displayAlbums()
+
+        // Add hover styles
+        addHoverStyles();
+        
+        // Setup hamburger menu
+        setupHamburgerMenu();
+
+        // Setup folder click events
+        setupFolderClicks();
+
+        // Initial load - display songs from default folder
+        let songs = await displaySongs(currFolder);
+        
+        if (songs && songs.length > 0) {
+            console.log("Initial songs loaded:", songs);
+            window.currentFolderSongs = songs;
+        }
+
         // Setup seekbar functionality
         setupSeekbar();
 
-        // Volume control functionality
-       // Volume control functionality
-let volumeSlider = document.getElementById('volumeSlider');
-let volumeBtn = document.getElementById('volumeBtn');
-let prevVolume = 70;
+        // Setup volume control
+        setupVolumeControl();
 
-if (volumeSlider) {
-    // Set initial volume
-    if (window.currentAudio) {
-        window.currentAudio.volume = volumeSlider.value / 100;
-    }
-
-    volumeSlider.addEventListener('input', (e) => {
-        let vol = e.target.value / 100;
-        if (window.currentAudio) {
-            window.currentAudio.volume = vol;
-        }
-        prevVolume = e.target.value;
-        
-        // Update volume icon based on level
-        if (volumeBtn) {
-            if (vol === 0) {
-                volumeBtn.src = 'volume-mute.svg';
-                volumeBtn.classList.add('muted');
-            } else if (vol < 0.5) {
-                volumeBtn.src = 'volume-low.svg';
-                volumeBtn.classList.remove('muted');
-            } else {
-                volumeBtn.src = 'volume-high.svg';
-                volumeBtn.classList.remove('muted');
+        // Play song function (defined in main scope to have access to songs and currFolder)
+        window.playSong = function(songFile, songsList = window.currentFolderSongs || []) {
+            // Clean the song file path
+            let cleanSongFile = songFile.replace(/\\/g, '/');
+            
+            // Get the folder name without 'songs/' prefix
+            let folderPath = currFolder;
+            if (folderPath.startsWith('songs/')) {
+                folderPath = folderPath.substring(6); // Remove 'songs/' prefix
             }
-        }
-    });
-}
-
-if (volumeBtn) {
-    volumeBtn.addEventListener('click', () => {
-        if (window.currentAudio && volumeSlider) {
-            if (window.currentAudio.volume > 0) {
-                // Mute - save current volume and set to 0
-                prevVolume = volumeSlider.value;
-                window.currentAudio.volume = 0;
-                volumeSlider.value = 0;
-                volumeBtn.src = 'volume-mute.svg';
-                volumeBtn.classList.add('muted');
-            } else {
-                // Unmute - restore previous volume
-                window.currentAudio.volume = prevVolume / 100;
-                volumeSlider.value = prevVolume;
-                
-                // Update icon based on restored volume level
-                if (prevVolume / 100 < 0.5) {
-                    volumeBtn.src = 'volume-low.svg';
-                } else {
-                    volumeBtn.src = 'volume-high.svg';
-                }
-                volumeBtn.classList.remove('muted');
-            }
-        } else if (!window.currentAudio && volumeSlider) {
-            // If no audio is playing, just toggle the slider value
-            if (volumeSlider.value > 0) {
-                prevVolume = volumeSlider.value;
-                volumeSlider.value = 0;
-                volumeBtn.src = 'volume-mute.svg';
-                volumeBtn.classList.add('muted');
-            } else {
-                volumeSlider.value = prevVolume;
-                if (prevVolume / 100 < 0.5) {
-                    volumeBtn.src = 'volume-low.svg';
-                } else {
-                    volumeBtn.src = 'volume-high.svg';
-                }
-                volumeBtn.classList.remove('muted');
-            }
-        }
-    });
-}
-        // Play song function
-        window.playSong = function(songFile, songsList = songs) {
-            let cleanSongFile = songFile.replace(/\\/g, '/').replace(/^songs\//, '');
+            
+            // Construct the correct URL
+            let audioUrl = `http://127.0.0.1:154/${currFolder}/${encodeURIComponent(cleanSongFile)}`;
             
             if (window.currentAudio) {
                 window.currentAudio.pause();
                 // Remove old event listeners
                 window.currentAudio.removeEventListener("timeupdate", updateTimeDisplay);
-                window.currentAudio.removeEventListener("timeupdate", updateSeekbar);
             }
             
-            window.currentAudio = new Audio(`http://127.0.0.1:154/songs/${encodeURIComponent(cleanSongFile)}`);
+            window.currentAudio = new Audio(audioUrl);
             
             // Set volume from slider
+            let volumeSlider = document.getElementById('volumeSlider');
             if (volumeSlider && window.currentAudio) {
                 window.currentAudio.volume = volumeSlider.value / 100;
             }
@@ -405,14 +567,16 @@ if (volumeBtn) {
             }
             
             // Play the audio
-            window.currentAudio.play().catch(e => console.error("Playback failed:", e));
+            window.currentAudio.play().catch(e => {
+                console.error("Playback failed:", e);
+                console.log("Failed URL:", audioUrl);
+            });
             
             // Update play/pause button
             updatePlayPauseButton(true);
             
             // Add timeupdate event listeners
             window.currentAudio.addEventListener("timeupdate", updateTimeDisplay);
-            window.currentAudio.addEventListener("timeupdate", updateSeekbar);
             
             // Handle song end - play next
             window.currentAudio.addEventListener("ended", function() {
@@ -421,7 +585,7 @@ if (volumeBtn) {
                 let currentIndex = songsList.findIndex(s => s.includes(currentSongFile));
                 
                 if (currentIndex < songsList.length - 1) {
-                    playSong(songsList[currentIndex + 1], songsList);
+                    window.playSong(songsList[currentIndex + 1], songsList);
                     
                     // Highlight next song
                     let nextLi = document.querySelector(`.songList ul li[data-index="${currentIndex + 1}"]`);
@@ -431,6 +595,10 @@ if (volumeBtn) {
                     updatePlayPauseButton(false);
                     let circle = document.querySelector(".circle");
                     if (circle) circle.style.left = "0%";
+                    
+                    // Reset song time display
+                    let songTime = document.querySelector(".songtime");
+                    if (songTime) songTime.textContent = "0:00 / 0:00";
                 }
             });
             
@@ -460,15 +628,15 @@ if (volumeBtn) {
                         window.currentAudio.pause();
                         updatePlayPauseButton(false);
                     }
-                } else if (songs.length > 0) {
-                    playSong(songs[0], songs);
+                } else if (window.currentFolderSongs && window.currentFolderSongs.length > 0) {
+                    window.playSong(window.currentFolderSongs[0], window.currentFolderSongs);
                     highlightActiveSong(document.querySelector('.songList ul li:first-child'));
                     updatePlayPauseButton(true);
                 }
             });
         }
 
-        // Previous button functionality - ADDED click effect
+        // Previous button functionality
         let prevButton = document.querySelector(".songbuttons img[src='previous.svg']");
         if (prevButton) {
             prevButton.addEventListener("click", function() {
@@ -478,13 +646,13 @@ if (volumeBtn) {
                     this.style.transform = "";
                 }, 100);
                 
-                if (window.currentAudio && songs.length > 0) {
+                if (window.currentAudio && window.currentFolderSongs && window.currentFolderSongs.length > 0) {
                     let currentSrc = window.currentAudio.src;
                     let currentSongFile = decodeURIComponent(currentSrc.split('/').pop());
-                    let currentIndex = songs.findIndex(song => song.includes(currentSongFile));
+                    let currentIndex = window.currentFolderSongs.findIndex(song => song.includes(currentSongFile));
                     
                     if (currentIndex > 0) {
-                        playSong(songs[currentIndex - 1], songs);
+                        window.playSong(window.currentFolderSongs[currentIndex - 1], window.currentFolderSongs);
                         let prevLi = document.querySelector(`.songList ul li[data-index="${currentIndex - 1}"]`);
                         highlightActiveSong(prevLi);
                     }
@@ -492,7 +660,7 @@ if (volumeBtn) {
             });
         }
 
-        // Next button functionality - ADDED click effect
+        // Next button functionality
         let nextButton = document.querySelector(".songbuttons img[src='next.svg']");
         if (nextButton) {
             nextButton.addEventListener("click", function() {
@@ -502,13 +670,13 @@ if (volumeBtn) {
                     this.style.transform = "";
                 }, 100);
                 
-                if (window.currentAudio && songs.length > 0) {
+                if (window.currentAudio && window.currentFolderSongs && window.currentFolderSongs.length > 0) {
                     let currentSrc = window.currentAudio.src;
                     let currentSongFile = decodeURIComponent(currentSrc.split('/').pop());
-                    let currentIndex = songs.findIndex(song => song.includes(currentSongFile));
+                    let currentIndex = window.currentFolderSongs.findIndex(song => song.includes(currentSongFile));
                     
-                    if (currentIndex < songs.length - 1) {
-                        playSong(songs[currentIndex + 1], songs);
+                    if (currentIndex < window.currentFolderSongs.length - 1) {
+                        window.playSong(window.currentFolderSongs[currentIndex + 1], window.currentFolderSongs);
                         let nextLi = document.querySelector(`.songList ul li[data-index="${currentIndex + 1}"]`);
                         highlightActiveSong(nextLi);
                     }
