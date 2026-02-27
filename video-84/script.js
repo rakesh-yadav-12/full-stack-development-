@@ -1,4 +1,7 @@
 let currFolder = "songs/cs"; // Define globally with default
+let currentAudio = null; // Track current audio globally
+let currentlySelectedFolder = null; // Track currently selected folder
+let currentlyPlayingFolder = null; // Track which folder's song is currently playing
 
 async function getSongs(folder) {
     try {
@@ -31,6 +34,96 @@ async function getSongs(folder) {
         console.error("Error fetching songs:", error);
         return [];
     }
+}
+
+// Function to update folder card play button based on playing state
+function updateFolderPlayButton(folderName, isPlaying = false) {
+    const folderCard = document.querySelector(`.card[data-folder="${folderName}"]`);
+    if (!folderCard) return;
+    
+    const playButton = folderCard.querySelector('.play');
+    if (!playButton) return;
+    
+    if (isPlaying) {
+        // Change to pause button
+        playButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="6" y="4" width="4" height="16" fill="black" stroke="none" />
+                <rect x="14" y="4" width="4" height="16" fill="black" stroke="none" />
+            </svg>
+        `;
+        playButton.classList.add('playing');
+        playButton.setAttribute('data-state', 'pause');
+    } else {
+        // Change back to play button
+        playButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+                <polygon points="9,7 17,12 9,17" fill="black" stroke="none" />
+            </svg>
+        `;
+        playButton.classList.remove('playing');
+        playButton.setAttribute('data-state', 'play');
+    }
+}
+
+// Function to stop current song and reset UI
+function stopCurrentSong() {
+    if (window.currentAudio) {
+        // Update the playing folder's button back to play
+        if (currentlyPlayingFolder) {
+            updateFolderPlayButton(currentlyPlayingFolder, false);
+        }
+        
+        window.currentAudio.pause();
+        window.currentAudio.currentTime = 0;
+        window.currentAudio = null;
+        currentlyPlayingFolder = null;
+    }
+    
+    // Reset play button
+    updatePlayPauseButton(false);
+    
+    // Reset seekbar
+    let circle = document.querySelector(".circle");
+    if (circle) circle.style.left = "0%";
+    
+    // Reset time display
+    let songTime = document.querySelector(".songtime");
+    if (songTime) songTime.textContent = "0:00 / 0:00";
+    
+    // Reset song info
+    let songInfo = document.querySelector(".songinfo");
+    if (songInfo) songInfo.textContent = "Select a song to play";
+    
+    // Remove active highlight from all songs
+    document.querySelectorAll(".songList ul li").forEach(li => {
+        li.classList.remove("active");
+    });
+}
+
+// Function to highlight selected folder
+function highlightSelectedFolder(folderName) {
+    // Remove active class from all cards
+    document.querySelectorAll(".card").forEach(card => {
+        card.classList.remove("selected-folder");
+    });
+    
+    // Add active class to selected folder card
+    if (folderName) {
+        const selectedCard = document.querySelector(`.card[data-folder="${folderName}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add("selected-folder");
+            
+            // Add click animation
+            selectedCard.classList.add("folder-clicked");
+            setTimeout(() => {
+                selectedCard.classList.remove("folder-clicked");
+            }, 300);
+        }
+    }
+    
+    // Update currently selected folder
+    currentlySelectedFolder = folderName;
 }
 
 // Function to format song name
@@ -100,14 +193,14 @@ function highlightActiveSong(activeLi) {
     }
 }
 
-// Function to update play/pause button - FIXED
+// Function to update play/pause button
 function updatePlayPauseButton(isPlaying) {
     let playButton = document.querySelector(".songbuttons img[src='play.svg'], .songbuttons img[src='pause.svg']");
     if (playButton) {
         if (isPlaying) {
             playButton.src = "pause.svg"; // Show pause when playing
         } else {
-            playButton.src = "play.svg"; // Show play when paused (FIXED)
+            playButton.src = "play.svg"; // Show play when paused
         }
     }
 }
@@ -199,7 +292,7 @@ function setupSeekbar() {
     });
 }
 
-// Add CSS for hover effects
+// Add CSS for hover effects and folder selection
 function addHoverStyles() {
     const styleSheet = document.createElement("style");
     styleSheet.textContent = `
@@ -291,6 +384,188 @@ function addHoverStyles() {
         .volume-slider {
             width: 100px;
             cursor: pointer;
+        }
+
+        /* Card Container and Card Styles */
+        .cardContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            width: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid transparent; /* For selected state */
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Selected folder style */
+        .card.selected-folder {
+            background: rgba(29, 185, 84, 0.15);
+            border: 2px solid #1db954;
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+        }
+
+        /* Click animation */
+        .card.folder-clicked {
+            animation: folderClick 0.3s ease;
+        }
+
+        @keyframes folderClick {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.95);
+                background: rgba(255, 255, 255, 0.3);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Pulse animation for newly selected folder */
+        .card.selected-folder {
+            animation: folderSelected 1s ease;
+        }
+
+        @keyframes folderSelected {
+            0% {
+                box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(29, 185, 84, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(29, 185, 84, 0);
+            }
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: #333;
+            transition: all 0.3s ease;
+        }
+
+        .card.selected-folder img {
+            transform: scale(1.05);
+        }
+
+        .card h2 {
+            margin: 10px 0 5px;
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Play button on card */
+        .play {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            background: #1db954;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            pointer-events: auto; /* Ensure button is clickable */
+        }
+
+        /* Playing state for card button */
+        .play.playing {
+            background: #ff4444;
+            opacity: 1;
+            transform: scale(1.1);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        .card:hover .play {
+            opacity: 1;
+        }
+
+        .play svg {
+            width: 24px;
+            height: 24px;
+            pointer-events: none; /* SVG shouldn't block clicks */
+        }
+
+        /* Default placeholder for cards without images */
+        .card .no-image {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        /* Loading animation for folder */
+        .card.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .card.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            margin: -15px 0 0 -15px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #1db954;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     `;
     document.head.appendChild(styleSheet);
@@ -402,7 +677,7 @@ async function displaySongs(folder) {
 
         // Get the song list container
         let songUL = document.querySelector(".songList ul");
-        
+
         if (!songUL) {
             console.error("No song list ul found in HTML!");
             return;
@@ -416,7 +691,7 @@ async function displaySongs(folder) {
             let li = document.createElement("li");
             li.innerHTML = '<div class="info">No songs found in this folder</div>';
             songUL.appendChild(li);
-            return;
+            return songs;
         }
 
         // Create and append all song items
@@ -431,81 +706,288 @@ async function displaySongs(folder) {
     }
 }
 
-// Setup folder click events
+// Setup folder card button click events
+function setupFolderCardButtons() {
+    document.addEventListener('click', async (e) => {
+        // Check if clicked on play button inside card
+        const playButton = e.target.closest('.card .play');
+        if (!playButton) return;
+        
+        e.stopPropagation(); // Prevent card click event
+        
+        const card = playButton.closest('.card');
+        if (!card) return;
+        
+        const folder = card.dataset.folder;
+        if (!folder) return;
+        
+        console.log("Folder play button clicked:", folder);
+        
+        // If this folder is currently playing
+        if (currentlyPlayingFolder === folder && window.currentAudio) {
+            // Toggle play/pause
+            if (window.currentAudio.paused) {
+                window.currentAudio.play();
+                updatePlayPauseButton(true);
+                updateFolderPlayButton(folder, true);
+            } else {
+                window.currentAudio.pause();
+                updatePlayPauseButton(false);
+                updateFolderPlayButton(folder, false);
+            }
+            return;
+        }
+        
+        // If a different folder is playing, stop it first
+        if (currentlyPlayingFolder && currentlyPlayingFolder !== folder) {
+            stopCurrentSong();
+        }
+        
+        // Add loading class to card
+        card.classList.add('loading');
+        
+        // Highlight the selected folder
+        highlightSelectedFolder(folder);
+        
+        // Display songs from the clicked folder
+        let songs = await displaySongs(`songs/${folder}`);
+        
+        // Remove loading class
+        card.classList.remove('loading');
+        
+        if (songs && songs.length > 0) {
+            window.currentFolderSongs = songs;
+            currFolder = `songs/${folder}`;
+            
+            // Play the first song automatically
+            if (songs.length > 0) {
+                // Small delay to ensure UI is ready
+                setTimeout(() => {
+                    window.playSong(songs[0], songs);
+                    // Highlight first song in list
+                    setTimeout(() => {
+                        const firstSong = document.querySelector('.songList ul li:first-child');
+                        if (firstSong) highlightActiveSong(firstSong);
+                    }, 100);
+                }, 100);
+            }
+            
+            // Update song info
+            let songInfo = document.querySelector(".songinfo");
+            if (songInfo) {
+                songInfo.style.transform = "scale(1.1)";
+                songInfo.textContent = `Playing from ${folder}`;
+                setTimeout(() => {
+                    songInfo.style.transform = "scale(1)";
+                }, 200);
+            }
+        }
+    });
+}
+
+// Setup folder click events (for the card itself)
 function setupFolderClicks() {
-    // Get all card elements
-    Array.from(document.getElementsByClassName("card")).forEach(e => {
-        e.addEventListener("click", async item => {
-            // Get the folder from data-folder attribute
-            const folder = item.currentTarget.dataset.folder;
+    // Use event delegation for dynamically created cards
+    document.addEventListener('click', async (e) => {
+        // Don't trigger if clicking on the play button (handled separately)
+        if (e.target.closest('.card .play')) return;
+        
+        const card = e.target.closest('.card');
+        if (card) {
+            const folder = card.dataset.folder;
             
             if (folder) {
                 console.log("Folder clicked:", folder);
                 
+                // Add loading class to card
+                card.classList.add('loading');
+                
+                // Highlight the selected folder (with visual effects)
+                highlightSelectedFolder(folder);
+                
+                // STOP ANY CURRENTLY PLAYING SONG
+                stopCurrentSong();
+                
                 // Display songs from the clicked folder
                 let songs = await displaySongs(`songs/${folder}`);
+                
+                // Remove loading class
+                card.classList.remove('loading');
                 
                 // Update the playSong function's default songs list
                 if (songs && songs.length > 0) {
                     window.currentFolderSongs = songs;
                     
-                    // Optional: Update the folder name in UI
+                    // Update currFolder
+                    currFolder = `songs/${folder}`;
+                    
+                    // Update the folder name in UI with animation
                     let folderName = folder.toUpperCase();
-                    // You can add a folder title element if you want
+                    console.log(`Now playing from: ${folderName}`);
+                    
+                    // Update song info to show folder selected with animation
+                    let songInfo = document.querySelector(".songinfo");
+                    if (songInfo) {
+                        songInfo.style.transform = "scale(1.1)";
+                        songInfo.textContent = `${songs.length} songs in ${folder}`;
+                        setTimeout(() => {
+                            songInfo.style.transform = "scale(1)";
+                        }, 200);
+                    }
+                } else {
+                    // No songs in folder
+                    let songInfo = document.querySelector(".songinfo");
+                    if (songInfo) {
+                        songInfo.style.transform = "scale(1.1)";
+                        songInfo.textContent = `No songs in ${folder}`;
+                        setTimeout(() => {
+                            songInfo.style.transform = "scale(1)";
+                        }, 200);
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Display albums function that properly extracts folder names
+async function displayAlbums() {
+    try {
+        console.log("Fetching albums from songs directory...");
+        
+        // Fetch the songs directory listing
+        let a = await fetch(`http://127.0.0.1:154/songs/`);
+        let response = await a.text();
+        
+        // Parse the HTML response
+        let div = document.createElement("div");
+        div.innerHTML = response;
+        
+        // Get all anchor tags (links)
+        let anchors = div.getElementsByTagName("a");
+        let cardContainer = document.querySelector(".cardContainer");
+        
+        if (!cardContainer) {
+            console.error("Card container not found!");
+            return;
+        }
+        
+        // Clear existing cards
+        cardContainer.innerHTML = "";
+        
+        console.log("Found anchors:", anchors.length);
+        
+        // Process each anchor to find folders
+        let folders = [];
+        
+        Array.from(anchors).forEach(anchor => {
+            let href = anchor.getAttribute('href');
+            
+            // Check if it's a directory (ends with /) and not parent directory
+            if (href && href.endsWith('/') && href !== '../' && href !== './') {
+                // Extract folder name (remove trailing /)
+                let folderName = href.slice(0, -1);
+                
+                // Decode the folder name (fixes %5C issues)
+                folderName = decodeURIComponent(folderName);
+                
+                // Clean up the folder name - remove any backslashes and extra paths
+                folderName = folderName.replace(/\\/g, '/').split('/').pop();
+                
+                // Skip if it's not a valid folder name
+                if (folderName && folderName !== '..' && folderName !== '.' && !folderName.includes('?')) {
+                    folders.push(folderName);
+                    console.log("Found folder:", folderName);
                 }
             }
         });
-    });
-}
-async function displayAlbums(){
-let a = await fetch(`http://127.0.0.1:154/songs/`)
-let response = await a.text();
-let div = document.createElement("div")
-div.innerHTML = response;
-let anchors = div.getElementsByTagName("a")
-let cardContainer = document.querySelector(".container")
-let array = Array.form(anchors)
-for (let index = 0; index < array.length; index++) {
-    const e = array[index];
-    
-}
-   
-    if(a.href.includes("/songs")){
-
-     let folder = a.href.split("/").slice(-2)[0]
-     let a = await fetch(`http://127.0.0.1:154/songs/${folder}/info.json`)
-let response = await a.json();
-console.log(response)
-cardContainer.innerHTML = cardContainer.innerHTML + `<div data-folder="cs" class="card">
-    
-    <div  class="play">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-
-   <polygon points="9,7 17,12 9,17" fill="black" stroke="none" />
-
-</svg>
-    </div>
-<img src="/songs/${folder}conver.jpg" alt="">
-<h2>${response.title}</h2>
-<p>${response.description}</p>
-  </div>`
+        
+        console.log("Detected folders:", folders);
+        
+        // Process each folder
+        for (let folder of folders) {
+            try {
+                // Default values
+                let title = folder;
+                let description = 'Click to play songs';
+                let hasCover = false;
+                
+                // Try to fetch info.json
+                try {
+                    let infoResponse = await fetch(`http://127.0.0.1:154/songs/${encodeURIComponent(folder)}/info.json`);
+                    if (infoResponse.ok) {
+                        let info = await infoResponse.json();
+                        title = info.title || folder;
+                        description = info.description || description;
+                        console.log(`Info for ${folder}:`, info);
+                    } else {
+                        console.log(`No info.json for folder: ${folder}`);
+                    }
+                } catch (infoError) {
+                    console.log(`Error fetching info.json for ${folder}:`, infoError);
+                }
+                
+                // Check if cover.jpg exists
+                try {
+                    let coverResponse = await fetch(`http://127.0.0.1:154/songs/${encodeURIComponent(folder)}/cover.jpg`, { method: 'HEAD' });
+                    hasCover = coverResponse.ok;
+                    console.log(`Cover for ${folder}:`, hasCover ? 'Found' : 'Not found');
+                } catch (coverError) {
+                    console.log(`Error checking cover for ${folder}:`, coverError);
+                }
+                
+                // Create card HTML with proper encoding
+                let cardHtml = `<div data-folder="${folder}" class="card">
+                    <div class="play" data-state="play">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+                            <polygon points="9,7 17,12 9,17" fill="black" stroke="none" />
+                        </svg>
+                    </div>`;
+                
+                // Add image if cover exists, otherwise add a colored placeholder with folder initial
+                if (hasCover) {
+                    cardHtml += `<img src="/songs/${encodeURIComponent(folder)}/cover.jpg" alt="${title}" 
+                        onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2250%22%3E${folder.charAt(0).toUpperCase()}%3C%2Ftext%3E%3C%2Fsvg%3E';">`;
+                } else {
+                    // Create a colored placeholder with the first letter of folder name
+                    let firstLetter = folder.charAt(0).toUpperCase();
+                    let colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
+                    let colorIndex = folders.indexOf(folder) % colors.length;
+                    let bgColor = colors[colorIndex].replace('#', '%23');
+                    
+                    cardHtml += `<img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22${bgColor}%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2280%22%3E${firstLetter}%3C%2Ftext%3E%3C%2Fsvg%3E" alt="${title}">`;
+                }
+                
+                cardHtml += `<h2>${title}</h2>
+                    <p>${description}</p>
+                </div>`;
+                
+                cardContainer.innerHTML += cardHtml;
+                
+            } catch (error) {
+                console.error(`Error creating card for folder ${folder}:`, error);
+            }
+        }
+        
+        console.log("Albums displayed successfully");
+        
+        // Highlight default folder if it exists
+        let defaultFolder = currFolder.split('/').pop();
+        if (defaultFolder && folders.includes(defaultFolder)) {
+            highlightSelectedFolder(defaultFolder);
+        }
+        
+    } catch (error) {
+        console.error("Error displaying albums:", error);
     }
-
 }
-
-Array.from(document.getElementsByClassName("card")).forEach(e=>{
-    console.log(e)
-    e.addEventListener("click", async item =>{
-        console.log("Fetching Songs")
-        songs = await getSongs(`songs/${item}.currentTarget`)
-    } )
-})
-
 
 async function main() {
     try {
-// Display all albums on the page
-displayAlbums()
+        console.log("Starting main function...");
+        
+        // Display all albums on the page
+        await displayAlbums();
 
         // Add hover styles
         addHoverStyles();
@@ -515,6 +997,9 @@ displayAlbums()
 
         // Setup folder click events
         setupFolderClicks();
+        
+        // Setup folder card button click events
+        setupFolderCardButtons();
 
         // Initial load - display songs from default folder
         let songs = await displaySongs(currFolder);
@@ -522,6 +1007,12 @@ displayAlbums()
         if (songs && songs.length > 0) {
             console.log("Initial songs loaded:", songs);
             window.currentFolderSongs = songs;
+            
+            // Update song info to show initial folder
+            let songInfo = document.querySelector(".songinfo");
+            if (songInfo) {
+                songInfo.textContent = `${songs.length} songs in ${currFolder.split('/').pop()}`;
+            }
         }
 
         // Setup seekbar functionality
@@ -535,22 +1026,28 @@ displayAlbums()
             // Clean the song file path
             let cleanSongFile = songFile.replace(/\\/g, '/');
             
-            // Get the folder name without 'songs/' prefix
-            let folderPath = currFolder;
-            if (folderPath.startsWith('songs/')) {
-                folderPath = folderPath.substring(6); // Remove 'songs/' prefix
-            }
-            
             // Construct the correct URL
             let audioUrl = `http://127.0.0.1:154/${currFolder}/${encodeURIComponent(cleanSongFile)}`;
             
             if (window.currentAudio) {
+                // Update the previously playing folder's button back to play
+                if (currentlyPlayingFolder) {
+                    updateFolderPlayButton(currentlyPlayingFolder, false);
+                }
+                
                 window.currentAudio.pause();
                 // Remove old event listeners
                 window.currentAudio.removeEventListener("timeupdate", updateTimeDisplay);
             }
             
             window.currentAudio = new Audio(audioUrl);
+            
+            // Get current folder name from currFolder
+            let currentFolderName = currFolder.split('/').pop();
+            
+            // Update the playing folder and its button
+            currentlyPlayingFolder = currentFolderName;
+            updateFolderPlayButton(currentFolderName, true);
             
             // Set volume from slider
             let volumeSlider = document.getElementById('volumeSlider');
@@ -599,6 +1096,12 @@ displayAlbums()
                     // Reset song time display
                     let songTime = document.querySelector(".songtime");
                     if (songTime) songTime.textContent = "0:00 / 0:00";
+                    
+                    // Update the playing folder's button back to play
+                    if (currentlyPlayingFolder) {
+                        updateFolderPlayButton(currentlyPlayingFolder, false);
+                        currentlyPlayingFolder = null;
+                    }
                 }
             });
             
@@ -610,7 +1113,7 @@ displayAlbums()
             if (circle) circle.style.left = "0%";
         }
 
-        // Play/Pause button functionality - FIXED with click effect
+        // Play/Pause button functionality
         let playButton = document.querySelector(".songbuttons img[src='play.svg'], .songbuttons img[src='pause.svg']");
         if (playButton) {
             playButton.addEventListener("click", function() {
@@ -624,9 +1127,19 @@ displayAlbums()
                     if (window.currentAudio.paused) {
                         window.currentAudio.play();
                         updatePlayPauseButton(true);
+                        
+                        // Update folder button back to pause when resuming
+                        if (currentlyPlayingFolder) {
+                            updateFolderPlayButton(currentlyPlayingFolder, true);
+                        }
                     } else {
                         window.currentAudio.pause();
                         updatePlayPauseButton(false);
+                        
+                        // Update folder button to play when pausing
+                        if (currentlyPlayingFolder) {
+                            updateFolderPlayButton(currentlyPlayingFolder, false);
+                        }
                     }
                 } else if (window.currentFolderSongs && window.currentFolderSongs.length > 0) {
                     window.playSong(window.currentFolderSongs[0], window.currentFolderSongs);
@@ -690,6 +1203,8 @@ displayAlbums()
         } else {
             updatePlayPauseButton(false);
         }
+
+        console.log("Main function completed successfully");
 
     } catch (error) {
         console.error("Error in main function:", error);

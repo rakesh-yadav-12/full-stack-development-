@@ -1,0 +1,21 @@
+# .htaccess
+# Protect sensitive files
+<FilesMatch "\.(php|inc)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Allow auth.php and index.php
+<FilesMatch "^(auth|index|logout)\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect config directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^config/ - [F,L]
+</IfModule>
